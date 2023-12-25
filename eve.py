@@ -8,6 +8,7 @@ import pyaudio
 import PyInstaller
 from datetime import datetime
 import requests
+import webbrowser
 
 
 # Conectar minha chave API
@@ -31,9 +32,44 @@ def get_temperature_sao_paulo():
     temperature = data['main']['temp']
     return temperature
 
+# Função para abrir o site
+
+
+def open_site():
+    url = "https://aluno.uninove.br/seu/CENTRAL/aluno/"
+    # Abre a página em uma nova guia do Microsoft Edge
+    webbrowser.open(url, new=1)
+
 
 audio = sr.Recognizer()
 maquina = pyttsx3.init()
+
+
+def transcribe_and_save():
+    recognizer = sr.Recognizer()
+
+    with sr.Microphone() as source:
+        print("Transcrevendo...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+
+    try:
+        transcript = recognizer.recognize_google(audio, language="pt-BR")
+        print("Transcrição: " + transcript)
+
+        # Obter a data e hora atual
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Salvar a transcrição no arquivo .txt
+        with open("transcriptions.txt", "a") as file:
+            file.write(f"{current_datetime} - {transcript}\n")
+
+    except sr.UnknownValueError:
+        print("Não foi possível transcrever o que você disse.")
+
+    except sr.RequestError as e:
+        print(
+            f"Não foi possível conectar ao serviço de reconhecimento de voz; {e}")
 # Função para da máquina escuta
 
 
@@ -76,15 +112,24 @@ def execute_command():
                 maquina.say(resultado)
                 maquina.runAndWait()
 
+            elif 'abra o site do aluno' in comando:
+                maquina.say('Abrindo o site')
+                maquina.runAndWait()
+                open_site()
+
             elif 'toque' in comando:
                 musica = comando.replace('toque', '')
                 resultado = pywhatkit.playonyt(musica)
                 maquina.say(f'Tocando {musica} no youtube')
                 maquina.runAndWait()
 
-            elif 'pare' in comando:
-                print("Fala Parada")
-                maquina.stop()
+            elif 'está por aí' in comando:
+                maquina.say('Olá senhor, o que precisa"?')
+                maquina.runAndWait()
+
+            elif 'transcreva' in comando:
+                transcribe_and_save()
+                maquina.say(comando)
                 maquina.runAndWait()
 
             elif 'quantos graus' in comando:
